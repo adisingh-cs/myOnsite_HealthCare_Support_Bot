@@ -1,0 +1,924 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1168,
+        1856
+      ],
+      "id": "53d7e6e5-c392-4623-9578-f62fb4cba691",
+      "name": "myOnsite Input",
+      "webhookId": "740e3b4d-149c-44e3-a343-184ae932f49d",
+      "credentials": {
+        "telegramApi": {
+          "id": "QIocfdMFGK8hfrFT",
+          "name": "myOnsite"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const chatId = $input.first().json.inner.user_id ;\nconst now = new Date();\nconst datePart = now.toISOString().slice(0,10).replace(/-/g, \"\");\nconst timePart = now.toTimeString().split(\" \")[0].replace(/:/g, \"\");\nconst chatPart = chatId.toString().slice(-4);\nconst randomPart = Math.floor(1000 + Math.random() * 9000);\nconst ticketId = `TKT-${datePart}-${timePart}-${chatPart}-${randomPart}`;\n\nreturn {\n  json: {\n    ticket_id: ticketId,\n    chat_id: chatId,\n    user_message: $('myOnsite Input').first().json.message.text\n  }\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        2048
+      ],
+      "id": "4a4e9c3d-0846-410b-90ab-e3e298e4b166",
+      "name": "Ticket Generation"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1aQPAtQeikZUwcJayjJ71qdaK6SQuicWtAFy1XjgK56E",
+          "mode": "list",
+          "cachedResultName": "n8n",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1aQPAtQeikZUwcJayjJ71qdaK6SQuicWtAFy1XjgK56E/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1157508144,
+          "mode": "list",
+          "cachedResultName": "MyOnSite",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1aQPAtQeikZUwcJayjJ71qdaK6SQuicWtAFy1XjgK56E/edit#gid=1157508144"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Ticket_ID": "={{ $json.message.content.ticket_id }}",
+            "User_ID": "={{ $json.message.content.chat_id }}",
+            "Response": "={{ $json.message.content.assistant_response }}",
+            "User_Query": "={{ $('myOnsite Input').item.json.message.text }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Ticket_ID",
+              "displayName": "Ticket_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "User_ID",
+              "displayName": "User_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "User_Query",
+              "displayName": "User_Query",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Response",
+              "displayName": "Response",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1392,
+        1952
+      ],
+      "id": "b48b7e2b-2952-4414-93bb-25408917a82a",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "DMkzztD8xxHlpNXI",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const user_id = [items[0].json.message.chat.id];\nreturn [{ json: { user_id } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -944,
+        1856
+      ],
+      "id": "7961762a-5006-486b-9496-471b9ece5374",
+      "name": "User ID",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "url": "https://api.getzep.com/api/v2/users",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "zepApi",
+        "options": {}
+      },
+      "id": "7b297c63-6ab5-4fa1-ba19-87333e19b988",
+      "name": "Fetch Users",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        -752,
+        1744
+      ],
+      "alwaysOutputData": false,
+      "credentials": {
+        "zepApi": {
+          "id": "eTOugLlWHp5LU4v7",
+          "name": "Zep Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "const rawData = $json.data;\n\nlet users = [];\n\ntry {\n  users = JSON.parse(rawData);\n} catch (err) {\n  throw new Error(\"Failed to parse user data: \" + err.message);\n}\n\nreturn users.map(user => ({ json: user }));"
+      },
+      "id": "b82f4d1b-4888-4949-a20a-0c991b04a5b8",
+      "name": "Parse User",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        1744
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "functionCode": "const userIds = items.map(item => item.json.user_id);\nreturn [{ json: { user_ids: userIds } }];\n"
+      },
+      "id": "a6ba89b9-4dda-419f-932b-1df98596dde8",
+      "name": "Set Details",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -368,
+        1744
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -176,
+        1840
+      ],
+      "id": "8666aae2-a716-45c1-a1d1-64d81a13b966",
+      "name": "Combine",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "2ba2844d-84e5-4c32-8a90-7bf95f423752",
+              "leftValue": "={{ $('Combine').item.json.user_ids }}",
+              "rightValue": "={{ $('Combine').item.json.user_id[0] }}",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        32,
+        1840
+      ],
+      "id": "8995c902-3826-4e58-a239-133cd02cda31",
+      "name": "Check",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.getzep.com/api/v2/users",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "zepApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"user_id\": \"{{ $json.user_id[0] }}\",\n  \"session_id\": \"{{ $json.user_id[0] }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        336,
+        2048
+      ],
+      "id": "2fa2e028-7924-4786-b923-40fd62ec96a1",
+      "name": "Register New User",
+      "credentials": {
+        "zepApi": {
+          "id": "eTOugLlWHp5LU4v7",
+          "name": "Zep Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.all();\n\nconst cleaned = raw.map(item => {\n  const inner = JSON.parse(item.json.data);\n  return { \n    json: {\n      inner\n    }\n  };\n});\n\nreturn cleaned;\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        592,
+        2048
+      ],
+      "id": "d2670790-490f-4908-a38f-9cbc6921b5fb",
+      "name": "Get Status"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.getzep.com/api/v2/graph",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "zepApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "user_id",
+              "value": "={{ $json.memory.user_id }}"
+            },
+            {
+              "name": "ticket_id",
+              "value": "={{ $json.memory.ticket_id }}"
+            },
+            {
+              "name": "user_query",
+              "value": "={{ $json.memory.user_query }}"
+            },
+            {
+              "name": "data",
+              "value": "={{ $json.memory.assistant_response }}"
+            },
+            {
+              "name": "source_description",
+              "value": "\"chat-assistant\""
+            },
+            {
+              "name": "metadata.source",
+              "value": "\"n8n\""
+            },
+            {
+              "name": "type",
+              "value": "text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1600,
+        2144
+      ],
+      "id": "9bb94f61-7661-4ba7-b4a7-cc6b701d8826",
+      "name": "ZEP Memory",
+      "credentials": {
+        "zepApi": {
+          "id": "eTOugLlWHp5LU4v7",
+          "name": "Zep Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const user_id = $input.first().json.message.content.chat_id;\nconst ticket_id = $input.first().json.message.content.ticket_id;\nconst user_query = $('myOnsite Input').first().json.message.text;\nconst assistant_response = $input.first().json.message.content.assistant_response;\n\nreturn {\n  json: {\n    memory: {\n      user_id,\n      ticket_id,\n      user_query,\n      assistant_response\n    }\n  }\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1392,
+        2144
+      ],
+      "id": "3658fe4a-67f9-4e5d-92fe-fca3eefda970",
+      "name": "Memory Format"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.getzep.com/api/v2/graph/node/user/{{ $json.user_id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "zepApi",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        336,
+        1632
+      ],
+      "id": "2305bcc6-88e0-46d4-85e2-32a52a67051f",
+      "name": "Get Memory",
+      "credentials": {
+        "zepApi": {
+          "id": "eTOugLlWHp5LU4v7",
+          "name": "Zep Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1aQPAtQeikZUwcJayjJ71qdaK6SQuicWtAFy1XjgK56E",
+          "mode": "list",
+          "cachedResultName": "n8n",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1aQPAtQeikZUwcJayjJ71qdaK6SQuicWtAFy1XjgK56E/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1157508144,
+          "mode": "list",
+          "cachedResultName": "MyOnSite",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1aQPAtQeikZUwcJayjJ71qdaK6SQuicWtAFy1XjgK56E/edit#gid=1157508144"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "User_ID",
+              "lookupValue": "={{ $('Check').item.json.user_id[0] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        592,
+        1632
+      ],
+      "id": "8f225990-f0c5-49d7-82a4-4cb3d2d13398",
+      "name": "Fetch Sheet Details",
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "DMkzztD8xxHlpNXI",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-nano",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-NANO"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Process the following support ticket data and return the JSON response as per the system instructions:\n\n{\n  \"ticket_id\": \"{{$json.ticket_id}}\",\n  \"chat_id\": \"{{$json.chat_id}}\",\n  \"user_message\": \"{{$json.user_message}}\"\n}\n"
+            },
+            {
+              "content": "=You are a multilingual AI customer support assistant. \nYou will receive as input:\n- ticket_id (already generated by the system)\n- chat_id\n- user_message\n\nYour responsibilities:\n1. Detect the language of the user_message and reply in ENGLISH only.\n2. Analyze the intent of the complaint internally (do not output the analysis to the user). \n   Consider:\n   - sentiment (positive/negative/neutral with polarity score -1 to +1)\n   - emotion (frustrated, angry, confused, happy, etc.)\n   - urgency_level (low, medium, high)\n   - escalation_risk (0.0–1.0 probability)\n   - possible issue_classification (product, shipping, billing, service, etc.)\n   - entities (order_id, product, dates, account numbers, etc. if any)\n\n3. Based on this analysis, generate ONE final customer-facing response in the same language as the user_message.\n   - The response must be empathetic and professional by default.\n   - It should be polite, respectful, and adapted to the detected cultural tone.\n   - The response must offer clarity and, if possible, propose a resolution (replacement, refund, escalation, or reassurance).\n\n4. Keep the response concise but helpful (3–5 sentences max).\n\n5. **Output Format Requirement**  \n   - Always output strictly in JSON.  \n   - JSON must include the following fields only:\n     {\n       \"ticket_id\": \"<provided_ticket_id>\",\n       \"chat_id\": \"<provided_chat_id>\",\n       \"assistant_response\": \"<final reply string>\"\n     }\n",
+              "role": "system"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1040,
+        2048
+      ],
+      "id": "549c55d1-bd73-4775-b4e7-b7846b635a2f",
+      "name": "New User Assistant",
+      "credentials": {
+        "openAiApi": {
+          "id": "w3kAzRkXjsVRx9bN",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-nano",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-NANO"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "={\n  \"ticket_id\": \"{{ $json.Ticket_ID }}\",\n  \"chat_id\": \"{{ $json.User_ID }}\",\n  \"user_message\": \"{{ $('myOnsite Input').item.json.message.text }}\",\n  \"sheet_context\": \"Previous Data : {{ $json.User_Query }},{{ $json.Response }}\",\n  \"memory_context\": \"{{ $('Get Memory').item.json.summary }}\"\n}\n"
+            },
+            {
+              "content": "=You are a multilingual AI customer support assistant with access to the user’s past history.\n\nYou will receive as input:\n- ticket_id\n- chat_id\n- user_message (current query)\n- sheet_context: Past ticket and response history retrieved from Google Sheets.\n- memory_context: Conversation history retrieved from Zep.\n\nYour responsibilities:\n1. Review the user_message in light of sheet_context and memory_context.\n2. Detect the language of the user_message and reply **exclusively** in that English language. Under no circumstances should you switch to another language.\n3. Analyze intent internally (do not expose this to the user):\n   - sentiment (-1 to +1)\n   - emotion (angry, frustrated, confused, neutral, happy, etc.)\n   - urgency_level (low, medium, high)\n   - escalation_risk (0.0–1.0 probability)\n   - issue_classification (product, shipping, billing, service, etc.)\n   - entities (order_id, product, account number, etc.)\n4. Generate one empathetic, professional, culturally adapted customer-facing response:\n   - Be concise (3–5 sentences).\n   - Personalize based on memory_context and sheet_context. Avoid repeating generic answers if the user has asked similar questions before.\n   - Offer resolution, reassurance, or escalation where appropriate.\n5. Format the output strictly in JSON:\n{\n  \"ticket_id\": \"<provided_ticket_id>\",\n  \"chat_id\": \"<provided_chat_id>\",\n  \"assistant_response\": \"<final reply string in the same language as user_message>\"\n}\n",
+              "role": "assistant"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        800,
+        1632
+      ],
+      "id": "df301ad6-e8c2-406e-947f-95980cc40e39",
+      "name": "Exisiting user Assistant",
+      "credentials": {
+        "openAiApi": {
+          "id": "w3kAzRkXjsVRx9bN",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1aQPAtQeikZUwcJayjJ71qdaK6SQuicWtAFy1XjgK56E",
+          "mode": "list",
+          "cachedResultName": "n8n",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1aQPAtQeikZUwcJayjJ71qdaK6SQuicWtAFy1XjgK56E/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1157508144,
+          "mode": "list",
+          "cachedResultName": "MyOnSite",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1aQPAtQeikZUwcJayjJ71qdaK6SQuicWtAFy1XjgK56E/edit#gid=1157508144"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Ticket_ID": "={{ $json.message.content.ticket_id }}",
+            "User_ID": "={{ $json.message.content.chat_id }}",
+            "Response": "={{ $json.message.content.assistant_response }}",
+            "User_Query": "={{ $('myOnsite Input').item.json.message.text }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Ticket_ID",
+              "displayName": "Ticket_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "User_ID",
+              "displayName": "User_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "User_Query",
+              "displayName": "User_Query",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Response",
+              "displayName": "Response",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1184,
+        1584
+      ],
+      "id": "a2bb3db0-e3a1-4452-8f2a-87e32f934d51",
+      "name": "Append row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "DMkzztD8xxHlpNXI",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.getzep.com/api/v2/graph",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "zepApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "user_id",
+              "value": "={{ $json.memory.user_id }}"
+            },
+            {
+              "name": "ticket_id",
+              "value": "={{ $json.memory.ticket_id }}"
+            },
+            {
+              "name": "user_query",
+              "value": "={{ $json.memory.user_query }}"
+            },
+            {
+              "name": "data",
+              "value": "={{ $json.memory.assistant_response }}"
+            },
+            {
+              "name": "source_description",
+              "value": "\"chat-assistant\""
+            },
+            {
+              "name": "metadata.source",
+              "value": "\"n8n\""
+            },
+            {
+              "name": "type",
+              "value": "text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1392,
+        1776
+      ],
+      "id": "47304ee0-6cc3-4fef-9e7a-6b429d2d14d9",
+      "name": "ZEP Memory1",
+      "credentials": {
+        "zepApi": {
+          "id": "eTOugLlWHp5LU4v7",
+          "name": "Zep Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const user_id = $input.first().json.message.content.chat_id;\nconst ticket_id = $input.first().json.message.content.ticket_id;\nconst user_query = $('myOnsite Input').first().json.message.text;\nconst assistant_response = $input.first().json.message.content.assistant_response;\n\nreturn {\n  json: {\n    memory: {\n      user_id,\n      ticket_id,\n      user_query,\n      assistant_response\n    }\n  }\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1184,
+        1776
+      ],
+      "id": "c4477ef4-d6e4-4c57-b0da-35f3782ef06b",
+      "name": "Memory Format1"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('myOnsite Input').item.json.message.chat.id }}",
+        "text": "={{ $json.Response }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1600,
+        1952
+      ],
+      "id": "7f5d10fb-9727-4844-a53e-a3f1ee5204f3",
+      "name": "Send a text message2",
+      "webhookId": "ae9caaa0-6058-434a-86b9-564ae9e3d6ef",
+      "credentials": {
+        "telegramApi": {
+          "id": "QIocfdMFGK8hfrFT",
+          "name": "myOnsite"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('myOnsite Input').item.json.message.chat.id }}",
+        "text": "={{ $json.Response }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1392,
+        1584
+      ],
+      "id": "bf7fa6e4-e4a5-4eb3-b18a-144bc8e7fb4a",
+      "name": "Send a text message3",
+      "webhookId": "ae9caaa0-6058-434a-86b9-564ae9e3d6ef",
+      "credentials": {
+        "telegramApi": {
+          "id": "QIocfdMFGK8hfrFT",
+          "name": "myOnsite"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "myOnsite Input": {
+      "main": [
+        [
+          {
+            "node": "User ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ticket Generation": {
+      "main": [
+        [
+          {
+            "node": "New User Assistant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Send a text message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "User ID": {
+      "main": [
+        [
+          {
+            "node": "Fetch Users",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Combine",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Fetch Users": {
+      "main": [
+        [
+          {
+            "node": "Parse User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse User": {
+      "main": [
+        [
+          {
+            "node": "Set Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Details": {
+      "main": [
+        [
+          {
+            "node": "Combine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine": {
+      "main": [
+        [
+          {
+            "node": "Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check": {
+      "main": [
+        [
+          {
+            "node": "Get Memory",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Register New User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Register New User": {
+      "main": [
+        [
+          {
+            "node": "Get Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Status": {
+      "main": [
+        [
+          {
+            "node": "Ticket Generation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory Format": {
+      "main": [
+        [
+          {
+            "node": "ZEP Memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Memory": {
+      "main": [
+        [
+          {
+            "node": "Fetch Sheet Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Sheet Details": {
+      "main": [
+        [
+          {
+            "node": "Exisiting user Assistant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "New User Assistant": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Memory Format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Exisiting user Assistant": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Memory Format1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory Format1": {
+      "main": [
+        [
+          {
+            "node": "ZEP Memory1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "89981ff1c00209715e01755ef3d86f5b476617190855ffef4dd8ba5da3d5c5e6"
+  }
+}
